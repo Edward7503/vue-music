@@ -1,20 +1,35 @@
 <template>
   <div id='recommend' class="recommend">
-      <div class="recommend-content">
-          <div v-if="recommends.length" class="slider-wrapper">
-              <slider>
-                  <div v-for="(item, index) in recommends" :key="index">
-                      <a :href="item.linkUrl">
-                          <img :src="item.picUrl" alt="">
-                      </a>
-                  </div>
-              </slider>
+      <scroll ref="scroll" :data='discList' class="recommend-content">
+          <div>
+            <div v-if="recommends.length" class="slider-wrapper">
+                <slider>
+                    <div v-for="(item, index) in recommends" :key="index">
+                        <a :href="item.linkUrl">
+                            <img @load="imgLoaded" :src="item.picUrl" alt="">
+                        </a>
+                    </div>
+                </slider>
+            </div>
+            <div class="recommend-list">
+                <h1 class="list-title">热门歌单推荐</h1>
+                <ul>
+                    <li class="item" v-for="(item, index) in discList" :key='index'>
+                        <div class="icon">
+                            <img width='60px' height='60px' v-lazy="item.imgurl" alt="">
+                        </div>
+                        <div class="text">
+                            <h2 class="name" v-html="item.creator.name"></h2>
+                            <p class="desc" v-html="item.dissname"></p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
           </div>
-          <div class="recommend-list">
-              <h1 class="list-title">热门推荐</h1>
-              <ul></ul>
+          <div class="loading-container">
+              <loading v-show="!discList.length"></loading>
           </div>
-      </div>
+      </scroll>
   </div>
 </template>
 
@@ -22,11 +37,15 @@
 import { getRecommendData, getDisclist } from "../../api/recommendUtil";
 import { ERR_OK } from "../../api/config";
 import Slider from "../../base/slider/slider";
+import Scroll from "../../base/scroll/scroll";
+import Loading from "../../base/loading/loading";
 
 export default {
   name: "recommend",
   components: {
-    Slider
+    Slider,
+    Scroll,
+    Loading
   },
   data() {
     return {
@@ -36,7 +55,9 @@ export default {
   },
   created() {
     this._getRecommend();
+    // setTimeout(() => {
     this._getDisclist();
+    // }, 2000);
   },
   methods: {
     _getRecommend() {
@@ -48,17 +69,25 @@ export default {
     },
     _getDisclist() {
       getDisclist().then(res => {
-        console.log("res", res.data);
         if (res.code === ERR_OK) {
-          //   this.discList = res.data.list;
-          console.log(res.data);
+          this.discList = res.data.list;
         }
       });
+    },
+    imgLoaded() {
+      // checkLoaded 保证refresh只执行一次
+      if (!this.checkLoaded) {
+        this.$refs.scroll.refresh();
+        this.checkLoaded = true;
+      }
     }
   }
 };
+// import "../../common/stylus/variable.styl";
 </script>
 <style lang='stylus' scoped>
+@import '../../common/stylus/variable.styl';
+
 .recommend {
     position: fixed;
     width: 100%;
